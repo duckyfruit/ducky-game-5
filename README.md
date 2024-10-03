@@ -1,8 +1,8 @@
-# (TODO: your game's title)
+# Hide and Quack
 
-Author: (TODO: your name)
+Author: Taylor Kynard
 
-Design: (TODO: In two sentences or fewer, describe what is new and interesting about your game.)
+Design: find your friend before the time runs out!
 
 Screen Shot:
 
@@ -10,9 +10,10 @@ Screen Shot:
 
 How To Play:
 
-(TODO: describe the controls and (if needed) goals/strategy.)
+WASD is used to move your character, and the mouse is used to look around. Run into the other duck to
+"find" them!
 
-Sources: (TODO: list a source URL for any assets you did not create yourself. Make sure you have a license for the asset.)
+Sources: All assets made by me :>
 
 This game was built with [NEST](NEST.md).
 

@@ -23,9 +23,17 @@ struct PlayMode : Mode {
 	std::vector<std::vector<glm::vec3>> scales; //a vector of scales
 	int fps = 12;
 	int numframes;
-	}duckrun, duckidle;
 	int currframe = 0;
-	float animtimer = 0.0f;
+	}duckrun, duckidle, friendhide;
+	
+	float playeranimtimer = 0.0f;
+	float npcanimtimer = 0.0f;
+	float hidetimer= 60.0f;
+
+	bool foundfriend = false;
+
+	Scene::Transform *friendlocation;
+
 	glm::highp_quat *animrot;
 
 	std::vector<Animation> animations;

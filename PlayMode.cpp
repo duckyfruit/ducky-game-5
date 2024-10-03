@@ -13,6 +13,142 @@
 #include <glm/gtx/string_cast.hpp>
 #include <random>
 
+
+#include <hb.h>
+#include <hb-ot.h>
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
+void setfont(char* test, glm::vec3 anchor,glm::uvec2 const &drawable_size, glm::vec4 color, float boxwidth, float boxheight, bool scrolldialogue, int &scrolldialogueindex) //display text of the specified index
+{
+	glDisable(GL_DEPTH_TEST);
+	float aspect = float(drawable_size.x) / float(drawable_size.y);
+	DrawLines lines(glm::mat4(
+			1.0f / aspect, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+	));
+
+	char *fontfile;
+	char *text;
+	
+	const float pixelwidth = 128.0f;
+	const float resolution = 1024.0f;
+	const float beglinex = anchor.x;
+	const float begliney = anchor.y;
+
+	fontfile = "PressStart.ttf";
+	text = test;
+
+
+	FT_Library  library;   /* handle to library     */
+	FT_Face     face;  
+	 
+	FT_Init_FreeType( &library );
+	FT_New_Face( library, fontfile, 0, &face );
+	
+	FT_Set_Pixel_Sizes( face, uint8_t(pixelwidth), uint8_t(pixelwidth));   /* pixel_height          */
+	FT_GlyphSlot  slot = face->glyph;
+
+	FT_Select_Charmap(
+          face,               /* target face object */
+          FT_ENCODING_BIG5 );
+
+	//Look into freetype
+	
+	/* And converted to absolute positions. */
+	{
+		
+		for (int i = 0; i < strlen(test); i++)
+		{
+			if(!scrolldialogue)
+			{
+				FT_Load_Char(face,test[i], FT_LOAD_RENDER); //load the character
+				if(test[i] == '\n') //newline!
+				{
+					if((i != strlen(test) - 1))
+					{
+						anchor.y -= (1/resolution *pixelwidth)*1.0f;
+						anchor.x = beglinex;
+					}
+					
+					FT_Load_Char( face, 32 , FT_LOAD_RENDER); //load a space instead
+					
+				}
+
+				
+				float origX = anchor.x;
+				float origY = anchor.y;
+				
+				for(int y = (slot->bitmap.rows - 1); y >= 0 ; y--)
+				{
+					for(uint32_t x = 0; x < (slot->bitmap.width); x++)
+					{
+						if(slot->bitmap.buffer[y*slot->bitmap.width+ x])
+						{
+							glm::vec3 anchordup1 = anchor;
+							glm::vec3 anchordup2 = anchor;
+							glm::vec3 anchordup3 = anchor;
+							anchordup1.x += 1/resolution;
+							anchordup2.y += 1/resolution;
+							anchordup3.x += 1/resolution;
+							anchordup3.y += 1/resolution;
+
+							glm::mat4x3 mat(anchor,anchordup1,anchordup2,anchordup3);
+							
+							lines.draw_rect(mat,color);
+						}
+						
+						
+						anchor.x += 1/resolution;
+						
+					}
+					anchor.y += 1/resolution;
+					anchor.x = origX;
+					//std::cout << "\n";
+				}
+
+				anchor.x += (1/resolution *slot->bitmap.width)*1.0f + 1/resolution * 4.0f;
+				anchor.y = origY;
+
+				//if we wanted to shake, move y in a sinusoid function
+
+				if(test[i] == ' ') //space!
+				{
+					anchor.x += (1/resolution *pixelwidth)/2.0f;	
+					
+				}
+
+				if(abs(anchor.x) - abs(beglinex)> boxwidth) //if we have extended past the width of the box
+				{
+					anchor.y -= (1/resolution *pixelwidth)*1.0f;
+					anchor.x = beglinex;	
+				}
+
+				
+				if(abs(anchor.y)- abs(begliney)> boxheight) //if we have extended past the height of the box
+				{
+					//set pause render at the index of the string
+					//when space is pressed resume at the index
+					
+					scrolldialogue = true;
+					scrolldialogueindex = i;
+					anchor.y = begliney;
+					anchor.x = beglinex;
+				}
+	
+			}
+		}
+		scrolldialogue = true;
+	}
+
+	FT_Done_Face    ( face );
+  	FT_Done_FreeType( library );
+
+}
+
 GLuint phonebank_meshes_for_lit_color_texture_program = 0;
 Load< MeshBuffer > phonebank_meshes(LoadTagDefault, []() -> MeshBuffer const * {
 	MeshBuffer const *ret = new MeshBuffer(data_path("duckyanimations.pnct"));
@@ -132,6 +268,41 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 
 	}
 
+	friendhide.numframes = 14;
+
+
+	for(int x =0; x< friendhide.numframes; x++) //number of total frames for duckrun
+	{
+		std::vector<Scene::Transform*> ntrans;
+		friendhide.frames.emplace_back(ntrans);
+		std::vector<glm::vec3> nscl;
+		friendhide.scales.emplace_back(nscl);
+		
+	} 
+
+	for(int x = 0; x < friendhide.numframes; x++) //duck idle
+	{
+		for (auto &transform : scene.transforms) {
+			std::string frm = "frame";
+			int currfrm = x+ 1;
+			frm += std::to_string(currfrm);
+			
+			if (transform.name.find(frm) != -1) 
+			{
+				if(transform.name.find("hide")!= -1)
+				{
+					Scene::Transform *temp = nullptr;
+					temp = &transform;
+					glm::vec3 tempscl = temp ->scale;
+					friendhide.frames[x].emplace_back(temp);
+					friendhide.scales[x].emplace_back(tempscl);
+				}
+
+			}
+		}
+
+	}
+
 	for (auto &transform : scene.transforms) {
 		if (transform.name.find("Player") != -1) 
 			playertranslate = &transform;
@@ -139,6 +310,10 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 		{
 			Scene::Transform*temp = &transform;
 			animrot =  &temp->rotation;
+		}
+		else if(transform.name.find("FriendSphere") != -1) 
+		{
+			friendlocation = &transform;
 		}
 			
 	} 
@@ -259,7 +434,48 @@ void PlayMode::update(float elapsed) {
 	//player walking:
 	{
 		//combine inputs into a move:
-		animtimer += elapsed;
+		playeranimtimer += elapsed;
+		npcanimtimer += elapsed;
+
+		hidetimer -= elapsed;
+
+
+
+		//FIND FRIEND//
+
+		if( playertranslate->position.x >=  (friendlocation->position.x - 10.0f) && playertranslate->position.x <=  (friendlocation->position.x + 10.0f) &&
+			playertranslate->position.y >=  (friendlocation->position.y - 10.0f) && playertranslate->position.y <=  (friendlocation->position.y + 10.0f) &&
+			playertranslate->position.z >=  (friendlocation->position.z - 10.0f) && playertranslate->position.z <=  (friendlocation->position.z + 10.0f) )																												
+		{
+			foundfriend = true;
+		}
+
+
+		//std::cout << glm::to_string(playertranslate->position) << " " << glm::to_string(friendlocation->position) << std::endl;
+
+
+		//FIND FRIEND//
+
+
+		//NPC ANIMATE//
+		if(npcanimtimer >= (1.0f/friendhide.fps)) //make duck run!
+		{
+			npcanimtimer = 0;
+			friendhide.currframe +=1;
+			if(friendhide.currframe >= friendhide.frames.size())
+			friendhide.currframe = 0;
+		}
+
+		for(int x =0; x<friendhide.frames.size(); x++)
+		{
+			for(int y =0; y<friendhide.frames[x].size(); y++)
+			{
+				if(friendhide.currframe == x ) friendhide.frames[x][y] -> scale = friendhide.scales[x][y];
+				else friendhide.frames[x][y] -> scale = glm::vec3(0.0f);
+			}
+		}
+		//NPC ANIMATE//
+
 
 		constexpr float PlayerSpeed = 20.0f;
 		glm::vec2 move = glm::vec2(0.0f);
@@ -271,21 +487,21 @@ void PlayMode::update(float elapsed) {
 		if(move.x != 0 || move.y != 0)
 		{
 			if(!duckrotated)
-			animtimer = 1.0f;
+			playeranimtimer = 1.0f;
 
-			if(animtimer >= (1.0f/duckrun.fps)) //make duck run!
+			if(playeranimtimer >= (1.0f/duckrun.fps)) //make duck run!
 			{
-				animtimer = 0;
-				currframe +=1;
-				if(currframe >= duckrun.frames.size())
-				currframe = 0;
+				playeranimtimer = 0;
+				duckrun.currframe +=1;
+				if(duckrun.currframe >= duckrun.frames.size())
+				duckrun.currframe = 0;
 			}
 
 			for(int x =0; x<duckrun.frames.size(); x++)
 			{
 				for(int y =0; y<duckrun.frames[x].size(); y++)
 				{
-					if(currframe == x ) duckrun.frames[x][y] -> scale = duckrun.scales[x][y];
+					if(duckrun.currframe == x ) duckrun.frames[x][y] -> scale = duckrun.scales[x][y];
 					else duckrun.frames[x][y] -> scale = glm::vec3(0.0f);
 				}
 			}
@@ -348,13 +564,13 @@ void PlayMode::update(float elapsed) {
 		else
 		{
 			if(duckrotated)
-			animtimer = 1.0f;
-			if(animtimer >= (1.0f/duckidle.fps))
+			playeranimtimer = 1.0f;
+			if(playeranimtimer >= (1.0f/duckidle.fps))
 			{
-				animtimer = 0;
-				currframe +=1;
-				if(currframe >= duckidle.frames.size())
-				currframe = 0;
+				playeranimtimer = 0;
+				duckidle.currframe +=1;
+				if(duckidle.currframe >= duckidle.frames.size())
+				duckidle.currframe = 0;
 
 			}
 
@@ -362,7 +578,7 @@ void PlayMode::update(float elapsed) {
 			{
 				for(int y =0; y<duckidle.frames[x].size(); y++)
 				{
-					if(currframe == x ) duckidle.frames[x][y] -> scale = duckidle.scales[x][y];
+					if(duckidle.currframe == x ) duckidle.frames[x][y] -> scale = duckidle.scales[x][y];
 					else duckidle.frames[x][y] -> scale = glm::vec3(0.0f);
 				}
 				
@@ -427,9 +643,6 @@ void PlayMode::update(float elapsed) {
 				//stepped to a new triangle:
 				player.at = end;
 				
-
-				
-				std::cout <<" crossline\n";
 				//rotate step to follow surface:
 				remain = rotation * remain;
 			} else {
@@ -495,7 +708,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	glUniform3fv(lit_color_texture_program->LIGHT_ENERGY_vec3, 1, glm::value_ptr(glm::vec3(1.0f, 1.0f, 0.95f)));
 	glUseProgram(0);
 
-	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glClearColor(0.5f, 0.8f, 1.0f, 1.0f);
 	glClearDepth(1.0f); //1.0 is actually the default value to clear the depth buffer to, but FYI you can change it.
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -527,15 +740,20 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion looks; WASD moves; escape ungrabs mouse",
-			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
-			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion looks; WASD moves; escape ungrabs mouse",
-			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
-			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+		glm::vec4 textcolor(0x00,0x00,0x00,0xff); //black text color
+
+		if(hidetimer <= 11.0f && !foundfriend)
+		textcolor = glm::vec4(0xff,0x00,0x00,0xff);
+
+		int noscroll = 0;
+		std::string found = "You Found Me!";
+		std::string lost = "You Lost!";
+		if(foundfriend)
+		setfont(&found[0],glm::vec3(-0.5f - H, 0.75f, 0.0), drawable_size,textcolor, 1.25f, 1.0f,0,noscroll);
+		else if(hidetimer < 0.0f)
+		setfont(&lost[0],glm::vec3(-0.3f - H, 0.75f, 0.0), drawable_size,textcolor, 1.25f, 1.0f,0,noscroll);
+		else
+		setfont(&std::to_string(int(hidetimer))[0],glm::vec3(0.0f - H, 0.75f, 0.0), drawable_size,textcolor, 1.0f, 1.0f,0,noscroll);
 	}
 	GL_ERRORS();
 }

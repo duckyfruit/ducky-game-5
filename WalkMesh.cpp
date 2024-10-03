@@ -242,10 +242,12 @@ bool WalkMesh::cross_edge(WalkPoint const &start, WalkPoint *end_, glm::quat *ro
 	
 	if(z == next_vertex.end()) return false;
 	
-	//glm::vec3 start_normal = ; //NORMALIZE CROSS PRODUCT
-	//glm::vec3 end_normal = ;
-	//rotation = glm::rotation(start_normal,end_normal);
-	rotation= glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	glm::vec3 start_normal = glm::normalize(glm::cross(vertices[start.indices.x]-vertices[start.indices.y],
+														vertices[start.indices.z]-vertices[start.indices.y]));
+	glm::vec3 end_normal = glm::normalize(glm::cross(vertices[end.indices.x]-vertices[end.indices.y],
+														vertices[end.indices.z]-vertices[end.indices.y]));
+	rotation = glm::rotation(start_normal,end_normal);
+	//rotation= glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
 	end.indices.z = z->second;
 	end.indices.x = start.indices.y;
