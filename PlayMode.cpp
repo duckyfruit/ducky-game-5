@@ -51,8 +51,9 @@ Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const
 PlayMode::PlayMode() : scene(*phonebank_scene) {
 
 	
-	int numframes = 13;
-	for(int x =0; x< numframes; x++) //number of total frames
+	duckrun.numframes = 13;
+
+	for(int x =0; x< duckrun.numframes; x++) //number of total frames for duckrun
 	{
 		std::vector<Scene::Transform*> ntrans;
 		duckrun.frames.emplace_back(ntrans);
@@ -61,7 +62,7 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 		
 	} 
 
-	for(int x = 0; x < numframes; x++)
+	for(int x = 0; x < duckrun.numframes; x++) //duck idle
 	{
 		for (auto &transform : scene.transforms) {
 			std::string frm = "frame";
@@ -70,11 +71,62 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 			
 			if (transform.name.find(frm) != -1) 
 			{
-				Scene::Transform *temp = nullptr;
-				temp = &transform;
-				glm::vec3 tempscl = temp ->scale;
-				duckrun.frames[x].emplace_back(temp);
-				duckrun.scales[x].emplace_back(tempscl);
+				if(transform.name.find("run") != -1)
+				{
+					Scene::Transform *temp = nullptr;
+					temp = &transform;
+					glm::vec3 tempscl = temp ->scale;
+					duckrun.frames[x].emplace_back(temp);
+					duckrun.scales[x].emplace_back(tempscl);
+				}
+
+			}
+		}
+
+	}
+
+	
+
+	for(int x = 0; x < duckrun.numframes; x++) //duck idle
+	{
+		for(int y =0; y<duckrun.frames[x].size(); y++)
+		{
+			duckrun.frames[x][y]->scale = glm::vec3(0.0f);
+		}
+		
+	}
+
+
+
+	duckidle.numframes = 14;
+
+	for(int x =0; x< duckidle.numframes; x++) //number of total frames for duckrun
+	{
+		std::vector<Scene::Transform*> ntrans;
+		duckidle.frames.emplace_back(ntrans);
+		std::vector<glm::vec3> nscl;
+		duckidle.scales.emplace_back(nscl);
+		
+	} 
+
+	for(int x = 0; x < duckidle.numframes; x++) //duck idle
+	{
+		for (auto &transform : scene.transforms) {
+			std::string frm = "frame";
+			int currfrm = x+ 1;
+			frm += std::to_string(currfrm);
+			
+			if (transform.name.find(frm) != -1) 
+			{
+				if(transform.name.find("idle")!= -1)
+				{
+					Scene::Transform *temp = nullptr;
+					temp = &transform;
+					glm::vec3 tempscl = temp ->scale;
+					duckidle.frames[x].emplace_back(temp);
+					duckidle.scales[x].emplace_back(tempscl);
+				}
+
 			}
 		}
 
@@ -209,7 +261,7 @@ void PlayMode::update(float elapsed) {
 		//combine inputs into a move:
 		animtimer += elapsed;
 
-		if(animtimer >= (1.0f/duckrun.fps))
+	/*	if(animtimer >= (1.0f/duckrun.fps))
 		{
 			animtimer = 0;
 			currframe +=1;
@@ -228,7 +280,7 @@ void PlayMode::update(float elapsed) {
 			
 		}
 
-
+	*/
 
 		constexpr float PlayerSpeed = 20.0f;
 		glm::vec2 move = glm::vec2(0.0f);
@@ -241,6 +293,36 @@ void PlayMode::update(float elapsed) {
 		//std::cout << rotateholdx <<std::endl;
 		if(move.x != 0 || move.y != 0)
 		{
+			if(!duckrotated)
+			animtimer = 1.0f;
+
+			if(animtimer >= (1.0f/duckrun.fps)) //make duck run!
+			{
+				animtimer = 0;
+				currframe +=1;
+				if(currframe >= duckrun.frames.size())
+				currframe = 0;
+			}
+
+			for(int x =0; x<duckrun.frames.size(); x++)
+			{
+				for(int y =0; y<duckrun.frames[x].size(); y++)
+				{
+					if(currframe == x ) duckrun.frames[x][y] -> scale = duckrun.scales[x][y];
+					else duckrun.frames[x][y] -> scale = glm::vec3(0.0f);
+				}
+			}
+
+			for(int x = 0; x < duckidle.numframes; x++) //duck idle
+			{
+				for(int y =0; y<duckidle.frames[x].size(); y++)
+				{
+					duckidle.frames[x][y]->scale = glm::vec3(0.0f);
+				}
+				
+			}
+
+
 			if(!duckrotated)
 			{
 				glm::vec4 rottemp(0.0f,1.0f, 0.0f, 0.0f );
@@ -268,7 +350,40 @@ void PlayMode::update(float elapsed) {
 			
 		}
 		else
-		duckrotated = false;
+		{
+			if(duckrotated)
+			animtimer = 1.0f;
+			if(animtimer >= (1.0f/duckidle.fps))
+			{
+				animtimer = 0;
+				currframe +=1;
+				if(currframe >= duckidle.frames.size())
+				currframe = 0;
+
+			}
+
+			for(int x =0; x<duckidle.frames.size(); x++)
+			{
+				for(int y =0; y<duckidle.frames[x].size(); y++)
+				{
+					if(currframe == x ) duckidle.frames[x][y] -> scale = duckidle.scales[x][y];
+					else duckidle.frames[x][y] -> scale = glm::vec3(0.0f);
+				}
+				
+			}
+
+			for(int x = 0; x < duckrun.numframes; x++) //duck idle
+			{
+				for(int y =0; y<duckrun.frames[x].size(); y++)
+				{
+					duckrun.frames[x][y]->scale = glm::vec3(0.0f);
+				}
+				
+			}
+
+			duckrotated = false;
+		}
+		
 
 		//make it so that moving diagonally doesn't go faster:
 		if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
@@ -392,7 +507,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	// TODO: consider using the Light(s) in the scene to do this
 	glUseProgram(lit_color_texture_program->program);
 	glUniform1i(lit_color_texture_program->LIGHT_TYPE_int, 1);
-	glUniform3fv(lit_color_texture_program->LIGHT_DIRECTION_vec3, 1, glm::value_ptr(glm::vec3(1.0f, 0.0f,1.0f)));
+	glUniform3fv(lit_color_texture_program->LIGHT_DIRECTION_vec3, 1, glm::value_ptr(glm::vec3(1.0f, 1.0f,1.0f)));
 	glUniform3fv(lit_color_texture_program->LIGHT_ENERGY_vec3, 1, glm::value_ptr(glm::vec3(1.0f, 1.0f, 0.95f)));
 	glUseProgram(0);
 

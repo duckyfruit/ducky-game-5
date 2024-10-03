@@ -22,10 +22,13 @@ struct PlayMode : Mode {
 	std::vector<std::vector<Scene::Transform*>> frames; //a vector of vectors
 	std::vector<std::vector<glm::vec3>> scales; //a vector of scales
 	int fps = 8;
-	}duckrun;
+	int numframes;
+	}duckrun, duckidle;
 	int currframe = 0;
 	float animtimer = 0.0f;
 	glm::highp_quat *animrot;
+
+	std::vector<Animation> animations;
 
 	//----- game state -----
 

@@ -84,6 +84,7 @@ LitColorTextureProgram::LitColorTextureProgram() {
 			"void main() {\n"
 			"	vec3 n = normalize(normal);\n"
 			"	vec3 shade\n;" //blue shade color
+			"	vec3 highlight\n;" //blue shade color
 			"	vec3 l = (LIGHT_DIRECTION);\n"
 			"	l = normalize(l);\n"
 			"	vec4 albedo = texture(TEX, texCoord) * color;\n"
@@ -95,6 +96,11 @@ LitColorTextureProgram::LitColorTextureProgram() {
 			"	else\n"
 			"	{\n"
 			"	fragColor = vec4(albedo.rgb, 1);\n"		
+			"	}\n"
+			"	if( (dot(n, l) > 0.98))\n"
+			"	{\n"	
+			"	highlight = vec3(1,0.8,0.3);\n"
+			"	fragColor = vec4(1 - (1 - highlight) *(1 - fragColor.rgb), 1);\n"			
 			"	}\n"
 			"}\n"
 		);
