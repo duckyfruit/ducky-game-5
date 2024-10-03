@@ -261,27 +261,6 @@ void PlayMode::update(float elapsed) {
 		//combine inputs into a move:
 		animtimer += elapsed;
 
-	/*	if(animtimer >= (1.0f/duckrun.fps))
-		{
-			animtimer = 0;
-			currframe +=1;
-			if(currframe >= duckrun.frames.size())
-			currframe = 0;
-
-		}
-
-		for(int x =0; x<duckrun.frames.size(); x++)
-		{
-			for(int y =0; y<duckrun.frames[x].size(); y++)
-			{
-				if(currframe == x ) duckrun.frames[x][y] -> scale = duckrun.scales[x][y];
-				else duckrun.frames[x][y] -> scale = glm::vec3(0.0f);
-			}
-			
-		}
-
-	*/
-
 		constexpr float PlayerSpeed = 20.0f;
 		glm::vec2 move = glm::vec2(0.0f);
 		if (left.pressed && !right.pressed) move.x =1.0f;
@@ -289,8 +268,6 @@ void PlayMode::update(float elapsed) {
 		if (down.pressed && !up.pressed) move.y =1.0f;
 		if (!down.pressed && up.pressed) move.y = -1.0f;
 
-		
-		//std::cout << rotateholdx <<std::endl;
 		if(move.x != 0 || move.y != 0)
 		{
 			if(!duckrotated)
@@ -322,31 +299,50 @@ void PlayMode::update(float elapsed) {
 				
 			}
 
-
+	
+			float rotateval = ((rotateholdx)/6.0f) * float(M_PI) * 2.0f;
+			//std::cout <<  rotateval  <<std::endl;
 			if(!duckrotated)
 			{
-				glm::vec4 rottemp(0.0f,1.0f, 0.0f, 0.0f );
-		
-				float rotateval = ((rotateholdx)/6.0f) * float(M_PI) * 2.0f;
-				//std::cout <<  rotateval  <<std::endl;
-				playertranslate->rotation =  glm::angleAxis(rotateval, glm::vec3(0.0f, 0.0f, 1.0f)) * pastrotation;
-				pastrotation = playertranslate->rotation;
-				rotateholdx = 0.0f;
-				camrotate->rotation = rotatecam;
-
+			playertranslate->rotation =  glm::angleAxis(rotateval, glm::vec3(0.0f, 0.0f, 1.0f)) * pastrotation;
+			pastrotation = playertranslate->rotation;
+			rotateholdx = 0.0f;
+			camrotate->rotation = rotatecam;
 			}
+
+			//player.transform->rotation = camrotate ->rotation;
 			duckrotated = true;
 
-			
-			if(move.y >0.0f)
-			*animrot = glm::angleAxis(glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		
+			if(move.y >0.0f)
+			{
+				*animrot = glm::angleAxis(glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			}
 			if(move.y < 0.0f)
-			*animrot  = glm::angleAxis(glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			{
+				*animrot  = glm::angleAxis(glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			}
+			
 			if(move.x > 0.0f)
-			*animrot  = glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			{
+				*animrot  = glm::angleAxis(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+				if(move.y > 0.0f)
+				*animrot  = glm::angleAxis(glm::radians(90.0f + 45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+				if(move.y < 0.0f)
+				*animrot  = glm::angleAxis(glm::radians(90.0f - 45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+			}
 			if(move.x < 0.0f)
-			*animrot  = glm::angleAxis(glm::radians(270.0f), glm::vec3(0.0f, 0.0f, 1.0f)); 
+			{
+				*animrot  = glm::angleAxis(glm::radians(270.0f), glm::vec3(0.0f, 0.0f, 1.0f)); 
+
+				if(move.y > 0.0f)
+				*animrot  = glm::angleAxis(glm::radians(270.0f - 45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+				if(move.y < 0.0f)
+				*animrot  = glm::angleAxis(glm::radians(270.0f + 45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			}
+			
 			
 		}
 		else
@@ -393,7 +389,12 @@ void PlayMode::update(float elapsed) {
 		//trycamrotate sometime!
 		glm::vec3 remain = player.transform ->make_local_to_world() * glm::vec4(move.x, move.y, 0.0f, 0.0f);
 		
-	
+		/*
+		float zswap = remain.z;
+		float yswap = remain.y;
+		remain.z = yswap;
+		remain.y = zswap;
+		*/
 		//using a for() instead of a while() here so that if walkpoint gets stuck in
 		// some awkward case, code will not infinite loop:
 
@@ -459,8 +460,6 @@ void PlayMode::update(float elapsed) {
 		//update player's position to respect walking:
 		
 		playertranslate->position = walkmesh->to_world_point(player.at);
-		
-		
 
 		{ //update player's rotation to respect local (smooth) up-vector:
 			
@@ -470,26 +469,11 @@ void PlayMode::update(float elapsed) {
 				walkmesh->to_world_smooth_normal(player.at) //smoothed up vector at walk location
 			);
 
-		
-			
-			
-
-			
-			
 			player.transform->rotation = glm::normalize(adjust * player.transform->rotation);
 			
-			
-			
+
 		} 
 
-		/*
-		glm::mat4x3 frame = camera->transform->make_local_to_parent();
-		glm::vec3 right = frame[0];
-		//glm::vec3 up = frame[1];
-		glm::vec3 forward = -frame[2];
-
-		camera->transform->position += move.x * right + move.y * forward;
-		*/
 	}
 
 	//reset button press counters:

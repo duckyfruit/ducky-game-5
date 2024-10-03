@@ -21,7 +21,7 @@ struct PlayMode : Mode {
 	struct Animation{
 	std::vector<std::vector<Scene::Transform*>> frames; //a vector of vectors
 	std::vector<std::vector<glm::vec3>> scales; //a vector of scales
-	int fps = 8;
+	int fps = 12;
 	int numframes;
 	}duckrun, duckidle;
 	int currframe = 0;
