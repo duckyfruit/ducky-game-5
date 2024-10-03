@@ -17,6 +17,16 @@ struct PlayMode : Mode {
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
+	//animator
+	struct Animation{
+	std::vector<std::vector<Scene::Transform*>> frames; //a vector of vectors
+	std::vector<std::vector<glm::vec3>> scales; //a vector of scales
+	int fps = 8;
+	}duckrun;
+	int currframe = 0;
+	float animtimer = 0.0f;
+	glm::highp_quat *animrot;
+
 	//----- game state -----
 
 	//input tracking:
@@ -27,6 +37,20 @@ struct PlayMode : Mode {
 
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
+	glm::highp_quat rotatecam;
+	glm::highp_quat origcamrot;
+	Scene::Transform *playertranslate;
+	Scene::Transform *camrotate;
+	Scene::Transform *camtranslate;
+	//glm::vec3 playerpos;
+
+	float rotateholdx;
+	float rotateholdy;
+	bool duckrotated = false;
+	glm::highp_quat pastrotation;
+	//float playerrotate;
+	//float camrotate;
+
 
 	//player info:
 	struct Player {

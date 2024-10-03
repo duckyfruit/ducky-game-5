@@ -34,7 +34,7 @@ struct WalkMesh {
 	// (should only need to call this at the start of a level)
 	WalkPoint nearest_walk_point(glm::vec3 const &world_point) const;
 
-
+	
 	//take a step on a triangle, stopping at edges:
 	//  if the step stays within the triangle:
 	//   - *end will be the position after stepping
